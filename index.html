@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bing 每日图片 API</title>
+<style>
+  :root { --bg:#f6f8fa; --card:#ffffff; --line:#e6e8eb; --text:#1f2329; --sub:#646a73; --brand:#00809d; --brand2:#00b7c3; --radius:14px; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif; line-height:1.5; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 16px 64px; }
+  .head { margin-bottom:22px; }
+  .head h1 { font-size:24px; margin:0 0 6px; letter-spacing:.2px; }
+  .head .accent { width:46px; height:4px; border-radius:4px; background:linear-gradient(135deg,var(--brand),var(--brand2)); margin:0 0 12px; }
+  .muted { color:var(--sub); font-size:13px; margin:0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:18px; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+  .controls label { font-size:12px; color:var(--sub); display:flex; flex-direction:column; gap:5px; }
+  .controls .grow { flex:1; min-width:180px; }
+  select, input { font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--text); width:100%; }
+  button { font-size:13px; padding:9px 16px; border:none; border-radius:9px; cursor:pointer; background:linear-gradient(135deg,var(--brand),var(--brand2)); color:#fff; font-weight:600; transition:filter .15s,transform .1s; }
+  button:hover { filter:brightness(1.05); }
+  button:active { transform:translateY(1px); }
+  button.ghost { background:#fff; color:var(--brand); border:1px solid var(--brand); }
+  .hero { overflow:hidden; padding:0; }
+  .hero img { width:100%; display:block; max-height:480px; object-fit:cover; background:#000; cursor:pointer; }
+  .hero .meta { padding:14px 16px; }
+  .hero .title { font-size:17px; font-weight:700; margin:0 0 6px; }
+  .hero .copy { color:var(--sub); font-size:13px; margin:0; }
+  .hint { font-size:12px; color:var(--sub); margin:0 0 16px; line-height:1.6; }
+  .hint code { background:#eef0f3; padding:1px 5px; border-radius:5px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 18px; }
+  .links h3, .features h3, .codes h3 { margin:0 0 10px; font-size:15px; }
+  .link-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .link-item code { flex:1; background:#f2f3f5; padding:7px 9px; border-radius:8px; font-size:12px; word-break:break-all; color:#333; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1f2329; color:#fff; padding:10px 18px; border-radius:10px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .toast.show { opacity:1; }
+  pre { background:#0f1115; color:#e6e8eb; padding:14px; border-radius:10px; overflow:auto; font-size:12px; max-height:280px; margin:0; }
+  .codes p.feat-sub { margin:0 0 14px; }
+  .feat-sub { color:var(--sub); font-size:13px; margin:0 0 14px; }
+  .codebox { position:relative; margin:0 0 14px; }
+  .codebox .copy-btn { position:absolute; top:8px; right:8px; padding:4px 10px; font-size:11px; opacity:.92; }
+  .feat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; margin-bottom:18px; }
+  .feat { border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .feat-name { font-weight:700; font-size:13px; color:var(--brand); margin-bottom:6px; }
+  .feat-desc { font-size:12.5px; color:var(--sub); line-height:1.55; }
+  .feat-desc code, .feat-name code, .feat-sub code { background:#eef0f3; padding:1px 5px; border-radius:5px; font-size:.92em; }
+  .features h4 { margin:0 0 8px; font-size:13px; }
+  .codes h4 { margin:0 0 6px; font-size:13px; color:var(--brand); }
+  table.params { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.params th, table.params td { border:1px solid var(--line); padding:7px 10px; text-align:left; }
+  table.params th { background:#f6f8fa; color:var(--text); }
+  table.params td { color:var(--sub); }
+  table.params code { background:#eef0f3; padding:1px 5px; border-radius:5px; }
+  .foot { text-align:center; color:var(--sub); font-size:12.5px; padding:22px 0 4px; line-height:1.7; border-top:1px solid var(--line); margin-top:8px; }
+  .foot a { color:var(--brand); text-decoration:none; font-weight:600; }
+  .foot a:hover { text-decoration:underline; }
+  .foot-sub { font-size:11.5px; opacity:.85; margin-top:4px; }
+
+  @media (max-width:640px) {
+    .wrap { padding:22px 12px 48px; }
+    .head h1 { font-size:20px; }
+    .controls { flex-direction:column; align-items:stretch; }
+    .controls .grow { min-width:0; }
+    .controls button { width:100%; }
+    .hero img { max-height:300px; }
+    .row { flex-direction:column; }
+    .row button { width:100%; }
+    .feat-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="accent"></div>
+    <h1>Bing 每日图片 API</h1>
+    <p class="muted">封装 Bing 每日壁纸，支持 JSON 元数据 / 直接出图 / 历史列表 / 随机。本页由接口实时驱动。</p>
+  </div>
+
+  <div id="banner" style="display:none;background:#fff4e6;border:1px solid #ffd8a8;color:#a8651b;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;"></div>
+
+  <div class="card controls">
+    <label class="grow">API 基地址（接口服务地址）
+      <input id="apiBase" type="text" placeholder="http://localhost:3000" />
+    </label>
+    <label>地区市场
+      <select id="mkt">
+        <option value="zh-CN">zh-CN（简中）</option>
+        <option value="en-US">en-US（美英）</option>
+        <option value="en-GB">en-GB（英）</option>
+        <option value="ja-JP">ja-JP（日）</option>
+        <option value="de-DE">de-DE（德）</option>
+        <option value="fr-FR">fr-FR（法）</option>
+      </select>
+    </label>
+    <label>分辨率
+      <select id="res">
+        <option value="1920x1080">1920×1080</option>
+        <option value="1366x768">1366×768</option>
+        <option value="UHD">UHD（4K）</option>
+      </select>
+    </label>
+    <label>往前天数 idx
+      <input id="idx" type="number" min="0" max="7" value="0" style="width:90px" />
+    </label>
+    <button id="btnToday">看今日</button>
+    <button id="btnRandom" class="ghost">随机一张</button>
+  </div>
+
+  <div class="card hero">
+    <img id="heroImg" alt="Bing 今日图片" title="点击查看 Bing 源图片地址" />
+    <div class="meta">
+      <p class="title" id="heroTitle">加载中…</p>
+      <p class="copy" id="heroCopy"></p>
+    </div>
+  </div>
+
+  <div class="row">
+    <button id="btnShowJson" class="ghost">查看当前 JSON</button>
+    <button id="btnOpenSrc" class="ghost">打开源图</button>
+  </div>
+  <p class="hint">💡 想直接跳到 Bing 源图片地址？点上方「打开源图」、点大图本身、或复制下方「源图片地址」均可；接口侧 <code>/api/image</code> 直接 302 跳转到 Bing 源图地址（不再由本接口代理出图）。</p>
+
+  <div class="card links">
+    <h3>接口地址（点击复制）</h3>
+    <div class="link-item"><code id="urlApi"></code><button class="ghost" data-copy="urlApi">复制</button></div>
+    <div class="link-item"><code id="urlImg"></code><button class="ghost" data-copy="urlImg">复制</button></div>
+    <div class="link-item"><code id="urlRandom"></code><button class="ghost" data-copy="urlRandom">复制</button></div>
+    <div class="link-item"><code id="urlSrc"></code><button class="ghost" data-copy="urlSrc">复制</button></div>
+  </div>
+
+  <div class="card features">
+    <h3>功能一览</h3>
+    <p class="feat-sub">本接口提供以下全部能力，所有接口均支持跨域（CORS）调用，并支持 <code>mkt</code> / <code>res</code> / <code>idx</code> 等通用参数。</p>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-name">/api · 元数据</div><div class="feat-desc">返回今日（或指定 idx 天数前）图片的 JSON 元数据：标题、版权、日期、图片地址等。</div></div>
+      <div class="feat"><div class="feat-name">/api/image · 直接出图</div><div class="feat-desc">直接 302 跳转到 Bing 源图地址（不缓存、不代理，由 Bing 直接提供图片）。</div></div>
+      <div class="feat"><div class="feat-name">/api/list · 历史列表</div><div class="feat-desc">返回最近 n（1–8）天图片的 JSON 列表，配合 <code>idx</code> 可翻页查看更早的图片。</div></div>
+      <div class="feat"><div class="feat-name">/api/random · 随机一张</div><div class="feat-desc">从最近 8 天中随机返回一张图片的 JSON 元数据，适合做每日一图 / 背景。</div></div>
+      <div class="feat"><div class="feat-name">/health · 健康检查</div><div class="feat-desc">返回 <code>{"status":"ok","ts":...}</code>，用于监控与心跳检测。</div></div>
+      <div class="feat"><div class="feat-name">/ · 首页</div><div class="feat-desc">即本页面，实时调用上方接口进行交互展示。</div></div>
+    </div>
+    <h4>通用参数</h4>
+    <table class="params">
+      <tr><th>参数</th><th>说明</th><th>可选值 / 范围</th></tr>
+      <tr><td><code>mkt</code></td><td>地区市场</td><td>zh-CN、en-US、en-GB、ja-JP、de-DE、fr-FR …</td></tr>
+      <tr><td><code>res</code></td><td>图片分辨率</td><td>1920x1080、1366x768、UHD（4K）</td></tr>
+      <tr><td><code>idx</code></td><td>往前天数（0=今天）</td><td>0–7</td></tr>
+      <tr><td><code>n</code></td><td>列表数量（仅 /api/list）</td><td>1–8</td></tr>
+    </table>
+  </div>
+
+  <div class="card codes">
+    <h3>网页直接调用代码</h3>
+    <p class="feat-sub">把示例中的 <code>https://你的域名</code> 换成你的接口地址（如 <code>https://bing.aoran.bid</code>）即可直接使用；点击每段右上角「复制」可拷贝代码。</p>
+
+    <h4>1. 一行嵌入今日图片（默认跳源图）</h4>
+    <div class="codebox"><button class="ghost copy-btn" data-code="c1">复制</button><pre><code id="c1">&lt;img src="https://你的域名/api/image" alt="Bing 每日图片" /&gt;</code></pre></div>
+
+    <h4>2. JavaScript 获取今日元数据</h4>
+    <div class="codebox"><button class="ghost copy-btn" data-code="c2">复制</button><pre><code id="c2">fetch('https://你的域名/api')
+  .then(r =&gt; r.json())
+  .then(d =&gt; {
+    console.log(d.title, d.copyright);
+    document.querySelector('img').src = d.url;
+  });</code></pre></div>
+
+    <h4>3. 获取最近列表（JSON）</h4>
+    <div class="codebox"><button class="ghost copy-btn" data-code="c3">复制</button><pre><code id="c3">fetch('https://你的域名/api/list?n=7')
+  .then(r =&gt; r.json())
+  .then(d =&gt; console.log(d.images));</code></pre></div>
+
+    <h4>4. 随机一张并跳转源图</h4>
+    <div class="codebox"><button class="ghost copy-btn" data-code="c4">复制</button><pre><code id="c4">fetch('https://你的域名/api/random')
+  .then(r =&gt; r.json())
+  .then(d =&gt; { location.href = d.url; }); // 或 image.src = d.url</code></pre></div>
+  </div>
+
+  <div id="jsonBox" style="display:none;margin-bottom:18px;">
+    <pre id="jsonText"></pre>
+  </div>
+
+  <footer class="foot">
+    <div>© <span id="year"></span> Bing 每日图片 API · 由 <a href="https://www.xiuyao.me" target="_blank" rel="noopener">XY</a> 开发维护</div>
+    <div class="foot-sub">图片版权归 Microsoft Bing 所有，本服务仅作接口封装与展示用途。</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast">已复制</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  function apiBase() {
+    return ($('apiBase').value || location.origin || 'http://localhost:3000').replace(/\/+$/, '');
+  }
+
+  function showBanner(msg) {
+    const b = $('banner');
+    if (!msg) { b.style.display = 'none'; return; }
+    b.style.display = 'block';
+    b.innerHTML = msg;
+  }
+
+  function q() {
+    const mkt = $('mkt').value, res = $('res').value, idx = $('idx').value;
+    return { mkt, res, idx };
+  }
+  function buildUrl(path, extra) {
+    const p = new URL(path, apiBase());
+    const { mkt, res, idx } = q();
+    if (path.startsWith('/api') || path === '/') {
+      p.searchParams.set('mkt', mkt);
+      p.searchParams.set('res', res);
+    }
+    if (extra) Object.entries(extra).forEach(([k,v]) => p.searchParams.set(k, v));
+    return p.toString();
+  }
+
+  function refreshLinks() {
+    $('urlApi').textContent = buildUrl('/api');
+    $('urlImg').textContent = buildUrl('/api/image');
+    $('urlRandom').textContent = buildUrl('/api/random');
+  }
+
+  async function loadHero(url) {
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      $('heroImg').src = d.url;
+      $('heroTitle').textContent = d.title || '(无标题)';
+      $('heroCopy').textContent = `${d.date} · ${d.copyright}`;
+      window.__current = d;
+      $('urlSrc').textContent = d.url;
+      showBanner('');
+    } catch (e) {
+      showBanner('加载失败：' + e.message + '。请确认「API 基地址」指向正在运行的服务（如 <b>http://localhost:3000</b>），且服务已启动（<code>node index.js</code>）。');
+    }
+  }
+
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1400); }
+  function copy(text) { navigator.clipboard.writeText(text).then(() => toast('已复制')).catch(() => toast('复制失败')); }
+
+  document.querySelectorAll('[data-copy]').forEach((b) => b.onclick = () => copy($(b.dataset.copy).textContent));
+  document.querySelectorAll('.copy-btn').forEach((b) => b.onclick = () => { const el = $(b.dataset.code); if (el) copy(el.textContent); });
+
+  $('btnToday').onclick = () => { refreshLinks(); loadHero(buildUrl('/api')); };
+  $('btnRandom').onclick = () => { refreshLinks(); loadHero(buildUrl('/api/random')); };
+  $('btnShowJson').onclick = () => {
+    const box = $('jsonBox'); box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (window.__current) $('jsonText').textContent = JSON.stringify(window.__current, null, 2);
+  };
+  $('btnOpenSrc').onclick = () => {
+    if (window.__current && window.__current.url) window.open(window.__current.url, '_blank', 'noopener');
+  };
+  $('heroImg').onclick = () => {
+    if (window.__current && window.__current.url) window.open(window.__current.url, '_blank', 'noopener');
+  };
+  $('mkt').onchange = $('res').onchange = $('idx').onchange = refreshLinks;
+  // 用户手动修改基地址后立即重载
+  $('apiBase').addEventListener('change', () => { refreshLinks(); loadHero(buildUrl('/api')); });
+
+  // 自动探测可用的接口基地址（优先当前页同域，否则尝试本地常见地址）
+  async function detectBase() {
+    const candidates = [...new Set(
+      [location.origin, 'http://localhost:3000', 'http://127.0.0.1:3000'].filter(Boolean)
+    )];
+    for (const base of candidates) {
+      const url = base.replace(/\/+$/, '') + '/api';
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 2500);
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) continue;
+        const d = await r.json();
+        if (d && d.url) return base.replace(/\/+$/, '');
+      } catch (e) { /* 尝试下一个 */ }
+    }
+    return null;
+  }
+
+  // 初始化
+  (async () => {
+    const y = $('year'); if (y) y.textContent = new Date().getFullYear();
+    const base = await detectBase();
+    if (base) {
+      $('apiBase').value = base;
+      showBanner('');
+    } else {
+      $('apiBase').value = location.origin || 'http://localhost:3000';
+      showBanner('未检测到可用的接口服务。请先启动后端（<code>node index.js</code>），并把上方「API 基地址」设为 http://localhost:3000，然后刷新本页。');
+    }
+    refreshLinks();
+    loadHero(buildUrl('/api'));
+  })();
+</script>
+</body>
+</html>

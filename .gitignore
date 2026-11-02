@@ -1,0 +1,18 @@
+# 依赖（本项目零依赖，留空也行）
+node_modules/
+
+# WorkBuddy 内部项目数据，不要上传
+.workbuddy/
+
+# Cloudflare 部署相关（仅在本地用于部署到 Cloudflare Pages，不进入开源仓库）
+functions/
+worker.js
+wrangler.toml
+
+# 本地环境变量 / 日志
+.env
+*.log
+
+# 系统文件
+.DS_Store
+Thumbs.db
