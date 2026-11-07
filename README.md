@@ -90,5 +90,3 @@ node index.js
 
 - 📦 开源仓库（GitHub）：本仓库即源码主页
 - 🔗 在线演示：`https://bing.aoran.bid`
-
-项目由 XY 维护更新
